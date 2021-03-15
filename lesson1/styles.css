@@ -37,6 +37,9 @@
 }
 
 .goods-item {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
   border: 1px solid #999;
   border-radius: 2px;
   box-shadow: 1px 2px 10px #999;
@@ -44,4 +47,47 @@
   width: 20%;
   text-align: center;
   margin: 20px;
+}
+.good-item-title,
+.good-item-price,
+.good-item-stock {
+  padding: 5px;
+}
+
+.good-item-button {
+  padding: 10px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.good-img {
+  width: 100px;
+  height: 100px;
+  background-color: #ddd;
+}
+
+.basketRoot {
+  width: 50%;
+  margin: 0 auto;
+  margin-bottom: 50px;
+}
+
+.basketTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 10px;
+}
+
+.basketTable td{
+  border: 1px solid #ddd;
+  padding: 5px;
+}
+
+.basketTable button{
+  width: 33%;
+}
+
+.basketDropButton {
+  padding: 10px;
+  margin-left: 20px;
 }
