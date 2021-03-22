@@ -1,198 +1,244 @@
-const api = () => [
-  { id: 1, title: "Shirt", price: 150, stockQuantity: 5 },
-  { id: 2, title: "Socks", price: 50, stockQuantity: 5 },
-  { id: 3, title: "Jacket", price: 350, stockQuantity: 5 },
-  { id: 4, title: "Shoes", price: 250, stockQuantity: 7 },
-];
+const API_URL = "goods.json";
 
-class GoodItem {
-  constructor({ ...args }, basket) {
-    Object.entries(args).forEach(([key, value]) => {
-      this[key] = value;
-    });
-    this.basket = basket;
-  }
-
-  addToCart = () => {
-    this.basket.add(this);
-  };
-
-  getHtml() {
-    const goodItem = document.createElement("div");
-    goodItem.classList.add("goods-item");
-
-    const goodImg = document.createElement("div");
-    goodImg.classList.add("good-img");
-
-    const goodTitle = document.createElement("h3");
-    goodTitle.classList.add("good-item-title");
-    goodTitle.innerText = this.title;
-
-    const goodPrice = document.createElement("p");
-    goodPrice.classList.add("good-item-price");
-    goodPrice.innerText = this.price;
-
-    const goodStock = document.createElement("p");
-    goodStock.classList.add("good-item-stock");
-    goodStock.innerText = `Доступно: ${this.stockQuantity}`;
-
-    const button = document.createElement("button");
-    button.classList.add("good-item-button");
-    button.innerText = "Купить";
-    button.onclick = this.addToCart;
-
-    goodItem.append(goodImg, goodTitle, goodPrice, goodStock, button);
-
-    return goodItem;
-  }
-}
-
-class GoodList {
-  constructor(basket) {
-    this.fetchApi = api;
-    this.basket = basket;
-
-    this.goods = this.fetch();
-  }
-
-  fetch() {
-    return this.fetchApi().map((item) => new GoodItem(item, this.basket));
-  }
-
-  getSum = () =>
-    this.goods.reduce(
-      (acc, { price, stockQuantity }) => acc + price * stockQuantity,
-      0
-    );
-
-  render() {
-    const root = document.querySelector(".goods-list");
-
-    this.goods.forEach((good) => {
-      root.append(good.getHtml());
-    });
-  }
-}
-
-class Basket {
-  constructor() {
-    this.sum = 0;
-    this.totalGoods = 0;
-    this.goods = [];
-    this.root = document.querySelector(".basket");
-    this.buttonSumEl = document.querySelector("#basketSum");
-    this.basketTable = document.createElement("table");
-    this.basketSumEl = document.createElement("span");
-    this.basketTotalGoodsEl = document.createElement("span");
-  }
-
-  add(good) {
-    if (!this.goods.length) this.render();
-
-    const basketItem = this.goods.find(({ id }) => id === good.id);
-
-    if (basketItem) {
-      basketItem.updateQuantity(1);
-    } else {
-      const newBasketItem = new BasketGoodItem(good, this, 1);
-      this.goods.push(newBasketItem);
-      this.basketTable.append(newBasketItem.getHtml());
+Vue.component("goods-item", {
+  // Создание нового компонента
+  template: `<div :data-id="id" class="goods-item">
+      <div class="good-item-img-placeholder"></div>
+      <h3>{{ title }}</h3>
+      <p>{{ price }}</p>
+      <button class="good-item-button" @click="addToCart">Купить</button>
+    </div>`,
+  props: ["title", "price", "id"], // задаем параметры компонента
+  methods: {
+    addToCart() {
+      this.$emit('addToCart', this.id);
     }
-
-    this.sum = this.goods.reduce(
-      (acc, { price, quantity }) => acc + price * quantity,
-      0
-    );
-
-    this.totalGoods = this.goods.reduce(
-      (acc, { quantity }) => acc + quantity,
-      0
-    );
-
-    this.updateSum();
   }
+});
 
-  remove(item) {
-    // удаление товаров из корзины
+Vue.component('goods-list', {
+  template: `<div class="goods-list">
+                <div v-if="!goods || goods.length === 0">Нет товаров</div>
+                <goods-item
+                  v-for="good in goods"
+                  :title="good.title"
+                  :price="good.price"
+                  :id="good.id"
+                  @addToCart="addToCartHandler"
+                />
+              </div>`,
+  props: {
+    goods: Array,
+  },
+  methods: {
+    addToCartHandler(id) {
+      this.$emit('addToCart', id);
+    }
   }
+})
 
-  drop() {
-    // очистить корзину
-    this.sum = 0;
-    this.goods = [];
-  }
+Vue.component("cart-item", {
+  template: `<tr data-id="id">
+            <td>{{ title }}</td>
+            <td>{{ price }}</td>
+            <td>{{ quantity }}</td>
+            <td>{{ totalPrice }}</td>
+            <td class="actionButtonsHolder">
+                <button @click="increaseHandler">+</button>
+                <button @click="decreaseHandler">-</button>
+                <button @click="removeHandler">X</button>
+            </td>
+       </tr>`,
 
-  updateSum() {
-    this.buttonSumEl.innerText = this.sum;
-    this.basketSumEl.innerText = this.sum;
-    this.basketTotalGoodsEl.innerText = this.totalGoods;
-  }
+  props: ["title", "price", "id", "quantity"], // задаем параметры компонента
 
-  render() {
-    this.basketTable = document.createElement("table");
-    const tr = document.createElement("tr");
+  computed: {
+    totalPrice() {
+      return this.price * this.quantity;
+    },
+  },
 
-    tr.insertAdjacentHTML(
-      "beforeend",
-      "<td>Название</td><td>Цена</td><td>Количество</td><td>Сумма</td>"
-    );
+  methods: {
+    increaseHandler() {
+      this.$emit("increaseQuantity", this.id);
+    },
 
-    this.basketTable.append(tr);
+    decreaseHandler() {
+      this.$emit("decreaseQuantity", this.id);
+    },
 
-    this.root.append(this.basketTable);
+    removeHandler() {
+      this.$emit("remove", this.id);
+    },
+  },
+});
 
-    const tableSummary = document.createElement("p");
-    const totalString = document.createTextNode(
-      "Количество товаров в корзине: "
-    );
-    const sumString = document.createTextNode(". Сумма: ");
-    tableSummary.append(
-      totalString,
-      this.basketTotalGoodsEl,
-      sumString,
-      this.basketSumEl
-    );
+Vue.component("cart", {
+  template: `<div class="cartWrapper">
+                <button class="cart-button" @click="openCartHandler" type="button">Корзина ({{totalCount}}|{{totalPrice}}р)</button>
+                <div class="cartPopup" v-if="isVisibleCart">
+                  <div class="emptyCartDisclaimer" v-if="!cartItems.length">Корзина пуста</div>
+                  <table v-if="cartItems.length" class="cartItemsTable">
+                        <tr class="cartTableHeader">
+                          <td>Название</td>
+                          <td>Количество</td>
+                          <td>Цена</td>
+                          <td>Сумма</td>
+                          <td></td>
+                        </tr>
+                        <cart-item
+                          v-for="good in cartItems"
+                          :title="good.title"
+                          :price="good.price"
+                          :id="good.id"
+                          :quantity="good.quantity"
+                          @remove="removeHandler"
+                          @increaseQuantity="increaseHandler"
+                          @decreaseQuantity="decreaseHandler"
+                        />
+                  </table>
+                </div>
+             </div>`,
 
-    this.root.append(tableSummary);
-  }
-}
+  props: {
+    cartItems: Array,
+  },
 
-class BasketGoodItem extends GoodItem {
-  constructor(item, basket, quantity) {
-    super(item, basket);
-    this.quantity = quantity;
-    this.row = document.createElement("tr");
-    this.quantityTd = document.createElement("td");
-    this.sumTd = document.createElement("td");
-  }
+  data() {
+    return {
+      isVisibleCart: false,
+    };
+  },
 
-  updateQuantity(quantity) {
-    if (this.quantity + quantity <= this.stockQuantity)
-      this.quantity += quantity;
+  computed: {
+    totalCount() {
+      return this.cartItems.reduce((acc, {quantity }) => acc + quantity, 0);
+    },
 
-    this.quantityTd.innerText = this.quantity;
-    this.sumTd.innerText = this.quantity * this.price;
-  }
+    totalPrice() {
+      return this.cartItems.reduce((acc, {price, quantity }) => acc + price * quantity, 0);
+    }
+  },
 
-  getHtml() {
-    const titleTd = document.createElement("td");
-    titleTd.innerText = this.title;
+  methods: {
+    openCartHandler() {
+      this.isVisibleCart = !this.isVisibleCart;
+    },
 
-    const priceTd = document.createElement("td");
-    priceTd.innerText = this.price;
+    increaseHandler(id) {
+      this.$emit("increaseQuantity", id);
+    },
 
-    this.quantityTd.innerText = this.quantity;
+    decreaseHandler(id) {
+      this.$emit("decreaseQuantity", id);
+    },
 
-    this.sumTd.innerText = this.price * this.quantity;
+    removeHandler(id) {
+      this.$emit("remove", id);
+    },
+  },
 
-    this.row.append(titleTd, priceTd, this.quantityTd, this.sumTd);
+});
 
-    return this.row;
-  }
-}
+Vue.component("search", {
+  template: `<input id="search" @input="searchHandler" placeholder="Поиск..." />`,
 
-const basket = new Basket();
-const goods = new GoodList(basket);
+  methods: {
+    searchHandler(e) {
+      this.$emit("valueChange", e);
+    },
+  },
+});
 
-console.log("goods sum: ", goods.getSum());
-goods.render();
+const vue = new Vue({
+  el: "#app",
+  template: `<div>
+                <header class="header">
+                    <search @valueChange="searchHandler" />
+                    <cart
+                        :cartItems="cart" 
+                        @remove="removeFromCartHandler"
+                        @increaseQuantity="increaseQuantityInCartHandler"
+                        @decreaseQuantity="decreaseQuantityInCartHandler"
+                    />
+                </header>
+                <main>
+                    <goods-list :goods="filtredGoods" @addToCart="addToCartHandler"/>
+                </main>
+            </div>`,
+  data: {
+    cart: [],
+    goods: [],
+    filtredGoods: [],
+    search: "",
+  },
+  methods: {
+    addToCartHandler(id) {
+      const good = this.cart.find((item) => item.id == id);
+
+      if (good) {
+        good.quantity++;
+      } else {
+        const initialGood = this.goods.find((item) => item.id == id);
+        this.cart.push({ ...initialGood, quantity: 1 });
+      }
+    },
+
+    increaseQuantityInCartHandler(id) {
+      const good = this.cart.find((item) => item.id == id)
+
+      if (good) good.quantity++;
+    },
+
+    decreaseQuantityInCartHandler(id) {
+
+      const good = this.cart.find((item) => item.id == id)
+
+      if (good && good.quantity >= 1) good.quantity--;
+
+      if (good && good.quantity <= 0) {
+        this.removeFromCartHandler(id)
+      }
+    },
+
+    removeFromCartHandler(id) {
+      const goodIndex = this.cart.findIndex((item) => item.id == id);
+
+      this.cart.splice(goodIndex, 1);
+    },
+
+    searchHandler(e) {
+      const {
+        target: { value },
+      } = e;
+      if (value === "") {
+        this.filtredGoods = this.goods;
+      }
+      const regexp = new RegExp(value, "gi");
+      this.filtredGoods = this.goods.filter((good) => regexp.test(good.title));
+    },
+
+    fetchPromise() {
+      // пока не писали свой сервер - используем статику
+      return new Promise((resolve) => {
+        resolve([
+          { id: 1, title: "Coat", price: 450 },
+          { id: 2, title: "Shirt", price: 150 },
+          { id: 3, title: "Socks", price: 50 },
+          { id: 4, title: "Jacket", price: 350 },
+          { id: 5, title: "Shoes", price: 250 },
+        ]);
+      });
+    },
+  },
+  mounted() {
+    this.fetchPromise()
+      .then((data) => {
+        this.goods = data;
+        this.filtredGoods = data;
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  },
+});
