@@ -51,3 +51,14 @@
 2021-03-25T21:23:14.759Z: obj: goods; type: add; goodsId: 13
 2021-03-25T21:23:17.180Z: obj: goods; type: add; goodsId: 14
 2021-03-25T21:23:23.486Z: obj: goods; type: add; goodsId: 15
+2021-04-02T21:55:51.631Z: obj: cart; type: update;
+2021-04-02T21:55:53.261Z: obj: cart; type: update;
+2021-04-02T21:55:53.514Z: obj: cart; type: update;
+2021-04-02T21:55:54.248Z: obj: cart; type: update;
+2021-04-02T22:03:43.320Z: obj: cart; type: update;
+2021-04-02T22:03:43.545Z: obj: cart; type: update;
+2021-04-02T22:03:43.761Z: obj: cart; type: update;
+2021-04-02T22:03:44.000Z: obj: cart; type: update;
+2021-04-02T22:03:44.201Z: obj: cart; type: update;
+2021-04-02T22:03:44.418Z: obj: cart; type: update;
+2021-04-02T22:03:44.605Z: obj: cart; type: update;
